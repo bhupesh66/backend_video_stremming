@@ -1,7 +1,5 @@
-/**
- * Hive Streaming – Complete Production-Ready Telemetry Plugin
- * NOW UPDATED TO ALWAYS SEND QUALITY INFO FOR EVERY EVENT
- */
+//Telemetry Class 
+// Event Driven
 
 class TelemetryPlugin {
     constructor(hls, videoElement, viewerId = "unknown-viewer", config = {}) {
@@ -9,9 +7,9 @@ class TelemetryPlugin {
         this.video = videoElement;
         this.viewerId = viewerId;
 
-        this.sessionId = "session-" + Math.random().toString(36).slice(2);
+        this.sessionId =  crypto.randomUUID() + "-" + Date.now();
 
-        // Store the last known quality (ALWAYS sent in every event)
+        // Store the last known quality (ALWAYS sent in every event through params)
         this.currentQuality = {
             bitrateKbps: null,
             width: null,
@@ -43,25 +41,27 @@ class TelemetryPlugin {
         this.isSending = false;
         this.retryTimer = null;
 
-        console.log("🚀 TelemetryPlugin initialized:", { viewerId, session: this.sessionId });
+        console.log(" TelemetryPlugin initialized:", { viewerId, session: this.sessionId });
 
         this.initListeners();
         this.startFlushTimer();
         window.addEventListener("online", () => this.flushQueue());
     }
 
-    // --------------------------------------------------------
-    //  ALWAYS INCLUDE QUALITY IN EVERY EVENT
-    // --------------------------------------------------------
+   
+
+
+    //base always run after event listner 
     base(eventType) {
         return {
+            eventId:  crypto.randomUUID(),
             viewerId: this.viewerId,
             sessionId: this.sessionId,
             eventType,
             timestamp: Date.now(),
             playbackPositionSec: this.video.currentTime ?? null,
 
-            // 🔥 Add this ALWAYS
+            // quality  ALWAYS even quality not drop 
             quality: this.currentQuality,
 
             engagement: {
@@ -76,9 +76,10 @@ class TelemetryPlugin {
         };
     }
 
-    // --------------------------------------------------------
+
     // NETWORK INFORMATION
-    // --------------------------------------------------------
+    //Comes from the Network Information API which is built into modern browsers
+    
     getNetworkInfo() {
         const n = navigator.connection || navigator.webkitConnection || navigator.mozConnection;
         return n ? {
@@ -88,10 +89,12 @@ class TelemetryPlugin {
         } : {};
     }
 
-    // --------------------------------------------------------
+    
     // DEVICE INFORMATION
-    // --------------------------------------------------------
+    //  Comes from Navigator 
+
     getDeviceInfo() {
+
         const ua = navigator.userAgent;
 
         let browser = "Unknown";
@@ -109,9 +112,9 @@ class TelemetryPlugin {
         };
     }
 
-    // --------------------------------------------------------
+    
     // PLAYER METRICS
-    // --------------------------------------------------------
+
     getPlayerMetrics() {
         const stats = this.video.getVideoPlaybackQuality?.() || {};
         const buffered = this.video.buffered;
